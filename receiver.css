@@ -1,0 +1,25 @@
+#SimpleCanvas {
+  background-color: #000;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
+
+#title {
+  color: rgb(255, 255, 255);
+  position: absolute;
+  top: 10px;
+}
+
+#interface {
+  color: #fff;
+  position: absolute;
+  bottom: 70px;
+}
+
+#fr {
+  color: #fff;
+  position: absolute;
+  bottom: 40px;
+  left: 14px;
+}/*# sourceMappingURL=receiver.css.map */
