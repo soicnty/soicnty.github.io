@@ -1,6 +1,5 @@
 const canvas = document.querySelector('#SimpleCanvas');
 const showDataInConsole = document.querySelector('#showDatainConsole');
-const framerate = document.querySelector("#framerate");
 let bShowDataInConsole = false;
 let bShowFarmerate = false;
 let frRateArray = [];
@@ -28,7 +27,7 @@ body.addEventListener('drop', (e)=>{
     } else {
 
         const fr = new FileReader();
-        fr.onloadend = function(ev) {        //読み終わるとこれがよばれて、ここで結果を見るんだ
+        fr.onloadend = function() {
             let result = JSON.parse(this.result);
             console.log(result);
             peer = connectPeerServer(result);
@@ -38,11 +37,9 @@ body.addEventListener('drop', (e)=>{
             });
             
             peer.on('connection', conn=>{
-                console.log('他のクライアントからの接続あり')
+                console.log('connected')
                 connect = conn;
-                if (connect) console.log("connected1:");
-                else console.log("not1")
-                console.log(connect);
+
                 conn.on('data', data => {
                     let dd = JSON.parse(data);
                     if (bShowDataInConsole) console.log(dd);
@@ -51,7 +48,7 @@ body.addEventListener('drop', (e)=>{
             });
 
         }
-        fr.readAsText(f);       //ここで読んで、
+        fr.readAsText(f);
     }
 })
 
@@ -64,16 +61,6 @@ function connectPeerServer(settings) {
     senderName = settings.sender.peerName;
     return peerSv;
 }
-
-
-// const peer = new Peer('receiver_1', {
-//     host: 'telemersive.ycam.jp',
-//     port: 9000,
-//     path: '/myapp'
-// });
-
-// const peer = new Peer();
-
 
 function calcFramerate() {
     const currentTime = Date.now();

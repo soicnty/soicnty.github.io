@@ -5,11 +5,11 @@ let receiverName;
 const body = document.querySelector('body');
 const dcp = document.querySelector('#display-cp');
 const cp = document.querySelector('.control-panel');
+const sb = document.querySelector('.square-box');
 
 document.addEventListener("dragover", function(event) {
     event.preventDefault();
 });  
-
 
 body.addEventListener('drop', (e)=>{
     e.preventDefault();
@@ -22,7 +22,7 @@ body.addEventListener('drop', (e)=>{
     } else {
 
         const fr = new FileReader();
-        fr.onloadend = function(ev) {        //読み終わるとこれがよばれて、ここで結果を見るんだ
+        fr.onloadend = function() {
             let result = JSON.parse(this.result);
             console.log(result);
             peer = connectPeerServer(result);
@@ -32,7 +32,7 @@ body.addEventListener('drop', (e)=>{
             });
             
         };
-        fr.readAsText(f);       //ここで読んで、
+        fr.readAsText(f);
     }
 
 });
@@ -58,8 +58,7 @@ function connectPeer() {
         conn.on('data', data => {
             console.log(`message from client2:${data}`);
         });
-    });    
-    
+    });       
 }
 
 function send_message(positions) {
@@ -70,11 +69,12 @@ dcp.addEventListener("change", e => {
     // console.log(e);
     if (e.target.checked === true) {
         cp.style.display = "none";
+        sb.style.display = "none";
     } else {
         cp.style.display = "";
+        sb.style.display = "";
     }    
 });
-
 
 import DeviceDetector from "https://cdn.skypack.dev/device-detector-js@2.2.10";
 testSupport([
@@ -138,105 +138,9 @@ const grid = new LandmarkGrid(landmarkContainer, {
     centered: true,
 });
 let activeEffect = 'mask';
-let recStatus = false;
-let currentRecData = [];
-let currentRecWorldData = [];
 let recStartTime = 0;
-let enableSaveLocal = true;
-let enable2DRec = false;
-let enable3DRec = true;
 let prevTime = 0;
-let prevTime_w = 0;
 let sendData = false;
-let connect = false;
-
-function fetchPost(sendingObj){
-
-    let sendingStr = JSON.stringify(sendingObj);
-    console.log(sendingStr);
-    console.log(sendingStr.length);
-
-    const fetch_options = {
-        method: 'POST',
-        body: sendingStr,
-        headers: {
-            'Content-Type': 'application/json'
-        }
-    };
-
-    fetch('http://192.168.1.28:3000', fetch_options)
-    .then(res => res.json())
-    .then(res => console.log(res))
-    .catch((error) => {
-        console.error('Error: ', error);
-    });
-
-}
-
-function postRecordedData() {
-
-    let dstr = Date();
-    let idx = dstr.indexOf(":");
-    let title = dstr.slice(4, idx + 6);
-
-    if (enableSaveLocal && enable2DRec && enable3DRec) {
-        let savingObj = {
-            title: title,
-            millisec_from_1970_1_1: Date.now(),
-            motion_data_2D: currentRecData,
-            motion_data_3D: currentRecWorldData,            
-            pose_landmarks: mpPose.POSE_LANDMARKS,
-            pose_connections: mpPose.POSE_CONNECTIONS
-        };
-
-        const fileName = "MotionData_"+title+".json";
-        const data = JSON.stringify(savingObj);
-        const link = document.createElement("a");
-        link.download = fileName;
-        link.href = "data:text/plain," + encodeURIComponent(data);
-        link.click();
-        console.log("hello");
-
-    }
-
-    if (enableSaveLocal && enable2DRec && !enable3DRec) {
-        let savingObj = {
-            title: title,
-            millisec_from_1970_1_1: Date.now(),
-            motion_data_2D: currentRecData,
-            pose_landmarks: mpPose.POSE_LANDMARKS,
-            pose_connections: mpPose.POSE_CONNECTIONS
-        };
-
-        const fileName = "MotionData_"+title+".json";
-        const data = JSON.stringify(savingObj);
-        const link = document.createElement("a");
-        link.download = fileName;
-        link.href = "data:text/plain," + encodeURIComponent(data);
-        link.click();
-        console.log("hello");
-
-    }
-
-    if (enableSaveLocal && !enable2DRec && enable3DRec) {
-        let savingObj = {
-            title: title,
-            millisec_from_1970_1_1: Date.now(),
-            motion_data_3D: currentRecWorldData,            
-            pose_landmarks: mpPose.POSE_LANDMARKS,
-            pose_connections: mpPose.POSE_CONNECTIONS
-        };
-
-        const fileName = "MotionData_"+title+".json";
-        const data = JSON.stringify(savingObj);
-        const link = document.createElement("a");
-        link.download = fileName;
-        link.href = "data:text/plain," + encodeURIComponent(data);
-        link.click();
-        console.log("hello");
-
-    }
-}
 
 function onResults(results) {
     document.body.classList.add('loaded');
@@ -265,6 +169,7 @@ function onResults(results) {
 
         let t = Date.now()-recStartTime;
         if (t > prevTime + 40) {
+
             let r = results.poseLandmarks;
             let capDataObj = {
                 poseLandmarks: r,
@@ -272,7 +177,6 @@ function onResults(results) {
                 connections: mpPose.POSE_CONNECTIONS,
             }
             
-            if (recStatus) currentRecData.push(capDataObj);
             if (sendData) {
                 send_message(JSON.stringify(capDataObj));
             }
@@ -289,18 +193,6 @@ function onResults(results) {
             .map(index => results.poseLandmarks[index]), { visibilityMin: 0.65, color: 'white', fillColor: 'white' });
     }
     if (results.poseWorldLandmarks) {
-        let t = Date.now()-recStartTime;
-        if (t > prevTime_w + 30) {
-            let r = results.poseWorldLandmarks;
-            let capDataObj = {
-                poseWorldLandmarks: r,
-                timeOfFrame: t,
-                connections: mpPose.POSE_CONNECTIONS,
-            }
-            if (recStatus) currentRecWorldData.push(capDataObj);
-            prevTime_w = t;
-        }
-
         grid.updateLandmarks(results.poseWorldLandmarks, mpPose.POSE_CONNECTIONS, [
             { list: Object.values(mpPose.POSE_LANDMARKS_LEFT), color: 'LEFT' },
             { list: Object.values(mpPose.POSE_LANDMARKS_RIGHT), color: 'RIGHT' },
@@ -315,7 +207,6 @@ const pose = new mpPose.Pose(options);
 pose.onResults(onResults);
 console.log(pose);
 
-let prevEnableRec = false;
 let prevConnect = false;
 let prevSendData = false;
 
@@ -329,10 +220,6 @@ new controls
     minDetectionConfidence: 0.5,
     minTrackingConfidence: 0.5,
     effect: 'background',
-    enableRec: false,
-    enableRec2D: false,
-    enableRec3D: true,
-    saveLocalFile: true,
     connect: false,
     sendData: false,
 })
@@ -384,31 +271,12 @@ new controls
         field: 'effect',
         discrete: { 'background': 'Background', 'mask': 'Foreground' },
     }),
-    new controls.Toggle({ title: 'Recording', field: 'enableRec' }),
-    new controls.Toggle({ title: 'Rec 2D', field: 'enableRec2D' }),
-    new controls.Toggle({ title: 'Rec 3D', field: 'enableRec3D' }),
-    new controls.Toggle({ title: 'Save Local', field: 'saveLocalFile' }),
     new controls.Toggle({ title: 'connect', field: 'connect' }),
     new controls.Toggle({ title: 'Send Data', field: 'sendData' }),
 ])
     .on(x => {
     const options = x;
     videoElement.classList.toggle('selfie', options.selfieMode);
-
-    if (!prevEnableRec && options.enableRec) {
-        console.log("yes! rec turns on!");
-        recStatus = true;
-        currentRecData = [];
-        recStartTime = Date.now();
-        prevTime = 0;
-        prevTime_w = 0;
-    } else if (prevEnableRec && !options.enableRec){
-        console.log("yes!, rec turns off!");
-        recStatus = false;
-        postRecordedData();
-    } else {
-        // console.log("rec status is the same");
-    }
 
     if (!prevConnect && options.connect) {  //to on
         connectPeer();
@@ -427,11 +295,6 @@ new controls
 
     prevSendData = options.sendData;
     prevConnect = options.connect;
-    prevEnableRec = options.enableRec;
-    enableSaveLocal = options.saveLocalFile;
-
-    enable2DRec = options.enableRec2D;
-    enable3DRec = options.enableRec3D;
 
     activeEffect = x['effect'];
     pose.setOptions(options);

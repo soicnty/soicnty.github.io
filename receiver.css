@@ -14,12 +14,7 @@
 #interface {
   color: #fff;
   position: absolute;
-  bottom: 70px;
-}
-
-#fr {
-  color: #fff;
-  position: absolute;
-  bottom: 40px;
-  left: 14px;
+  font-size: smaller;
+  color: #666;
+  bottom: 5px;
 }/*# sourceMappingURL=receiver.css.map */
